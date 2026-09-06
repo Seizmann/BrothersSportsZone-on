@@ -23,22 +23,36 @@ export default function BottomSheet({ open, onClose, labelledBy, children }: Bot
   const reducedMotion = useReducedMotion();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Lock body scroll + focus the sheet while open; restore on close.
+  // Keep the latest onClose without letting its identity drive effects: the
+  // parent recreates this callback on every form keystroke, and re-running
+  // the focus effect below would steal focus from the field being typed in.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  // Lock body scroll + focus the sheet only when it opens/closes. Keyed on
+  // `open` alone — never on onClose or form state — so typing in a field
+  // never re-runs this effect and never yanks focus away from the input.
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     panelRef.current?.focus();
 
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open, onClose]);
+  }, [open]);
+
+  // Escape closes the sheet while it's open; the handler reads the latest
+  // onClose through a ref so the listener never needs re-subscribing.
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCloseRef.current();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   if (!open) return null;
 

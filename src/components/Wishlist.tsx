@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useState, type FormEvent, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   validateWishlistInput,
@@ -98,7 +98,9 @@ export default function Wishlist({ open, onOpen, onClose }: WishlistProps) {
     });
   }
 
-  function closeSheet() {
+  // Stable identity: BottomSheet's effects key on this, so it must not be
+  // recreated on every keystroke-driven render.
+  const closeSheet = useCallback(() => {
     onClose();
     // Reset to a clean form once the exit animation is out of view.
     setTimeout(() => {
@@ -107,7 +109,7 @@ export default function Wishlist({ open, onOpen, onClose }: WishlistProps) {
       setBanner(null);
       reset();
     }, 300);
-  }
+  }, [onClose, reset]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

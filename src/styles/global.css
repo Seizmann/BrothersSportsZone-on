@@ -55,7 +55,9 @@
   --text-eyebrow--font-weight: 600;
   --text-eyebrow--letter-spacing: 1px;
 
-  --text-countdown: clamp(2.5rem, 4vw + 1rem, 4rem);
+  /* §4.2 range is 40–64px; small-vw terms let 2-digit values shrink to ~27px
+   * so they always fit their grid cell on ~320–400px phones. */
+  --text-countdown: clamp(1.6875rem, 4vw + 1rem, 4rem);
   --text-countdown--line-height: 1;
   --text-countdown--font-weight: 700;
 }

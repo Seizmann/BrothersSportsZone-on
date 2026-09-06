@@ -33,8 +33,12 @@ export async function handleWishlistPost(
     };
   }
 
-  if (!env.url || !env.token) {
-    console.error("Upstash Redis is not configured");
+  if (!env.url || !env.token || !env.url.startsWith("https://")) {
+    console.error(
+      "Upstash Redis is not configured: UPSTASH_REDIS_REST_URL must be the",
+      "https:// REST endpoint (not the redis:// connection string) and",
+      "UPSTASH_REDIS_REST_TOKEN must be the REST token.",
+    );
     return {
       status: 500,
       json: {

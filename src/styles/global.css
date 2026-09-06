@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — REQUIREMENT.md §4 (authoritative; overrides DESIGN.md palette).
+ * Pitch green is the ONLY saturated color on the page.
+ * Spacing: Tailwind v4's default 4px-based scale already matches §4.3 exactly
+ * (2/4/8/12/16/24/32/48/64) — no overrides needed.
+ * Elevation: no drop shadows anywhere; depth comes from surface contrast.
+ */
+@theme {
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+
+  /* Colors (§4.1) */
+  --color-primary: #1b7a43;
+  --color-primary-dark: #0f5a2e;
+  --color-on-primary: #fafaf5;
+  --color-ink: #14201a;
+  --color-ink-soft: #2b3a32;
+  --color-body-mid: #5c6b62;
+  --color-mute: #a8b3ac;
+  --color-canvas: #fafaf5;
+  --color-canvas-soft: #f0f2ed;
+  --color-line-white: #ffffff;
+
+  /* Radius (§4.4) */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+
+  /* Type scale (§4.2) */
+  --text-display-xl: clamp(2.25rem, 5.5vw + 1rem, 3.5rem);
+  --text-display-xl--line-height: 1.04;
+  --text-display-xl--font-weight: 600;
+  --text-display-xl--letter-spacing: -0.02em;
+
+  --text-display-md: 2rem;
+  --text-display-md--line-height: 38px;
+  --text-display-md--font-weight: 600;
+
+  --text-display-sub: 1.25rem;
+  --text-display-sub--line-height: 28px;
+  --text-display-sub--font-weight: 500;
+
+  --text-body-lg: 1.125rem;
+  --text-body-lg--line-height: 28px;
+
+  --text-body-md: 1rem;
+  --text-body-md--line-height: 24px;
+
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 18px;
+  --text-caption--font-weight: 500;
+
+  --text-eyebrow: 0.8125rem;
+  --text-eyebrow--line-height: 13px;
+  --text-eyebrow--font-weight: 600;
+  --text-eyebrow--letter-spacing: 1px;
+
+  --text-countdown: clamp(2.5rem, 4vw + 1rem, 4rem);
+  --text-countdown--line-height: 1;
+  --text-countdown--font-weight: 700;
+}
+
+/* Base */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-canvas font-sans text-body-md text-ink antialiased;
+  }
+
+  ::selection {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .on-dark :focus-visible {
+    outline-color: var(--color-line-white);
+  }
+}
+
+/* Continuous / looping effects — native CSS, gated behind reduced-motion.
+ * One-shot entrance choreography lives in Framer Motion instead. */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-pitch-drift {
+    animation: pitch-drift 90s linear infinite alternate;
+  }
+
+  .digit-roll {
+    animation: digit-roll 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@keyframes pitch-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-2.5%, -1.5%, 0);
+  }
+}
+
+@keyframes digit-roll {
+  from {
+    transform: translateY(55%);
+    opacity: 0.4;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

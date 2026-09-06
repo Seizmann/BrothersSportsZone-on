@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#14201A"/>
+  <!-- pitch-line motif -->
+  <g fill="none" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="2">
+    <line x1="600" y1="0" x2="600" y2="630"/>
+    <circle cx="600" cy="315" r="150"/>
+    <circle cx="600" cy="315" r="4" fill="#FFFFFF" fill-opacity="0.06" stroke="none"/>
+    <rect x="340" y="-110" width="520" height="220"/>
+    <rect x="460" y="-110" width="280" height="90"/>
+    <rect x="340" y="520" width="520" height="220"/>
+    <rect x="460" y="640" width="280" height="90"/>
+    <path d="M 0 28 A 28 28 0 0 0 28 0"/>
+    <path d="M 1172 0 A 28 28 0 0 0 1200 28"/>
+    <path d="M 28 630 A 28 28 0 0 0 0 602"/>
+    <path d="M 1200 602 A 28 28 0 0 0 1172 630"/>
+  </g>
+  <!-- lockup -->
+  <g>
+    <circle cx="600" cy="196" r="26" fill="none" stroke="#1B7A43" stroke-width="4"/>
+    <circle cx="600" cy="196" r="10" fill="none" stroke="#1B7A43" stroke-width="4"/>
+    <line x1="600" y1="170" x2="600" y2="180" stroke="#1B7A43" stroke-width="4"/>
+    <line x1="600" y1="212" x2="600" y2="222" stroke="#1B7A43" stroke-width="4"/>
+    <text x="600" y="268" text-anchor="middle" font-family="Inter Variable, Inter, sans-serif" font-size="26" font-weight="600" letter-spacing="3" fill="#A8B3AC">BROTHER'S</text>
+    <text x="600" y="330" text-anchor="middle" font-family="Inter Variable, Inter, sans-serif" font-size="64" font-weight="600" letter-spacing="-1" fill="#FAFAF5">Sports Zone</text>
+  </g>
+  <!-- opening message -->
+  <text x="600" y="430" text-anchor="middle" font-family="Inter Variable, Inter, sans-serif" font-size="22" font-weight="600" letter-spacing="4" fill="#1B7A43">OPENING SOON</text>
+  <text x="600" y="490" text-anchor="middle" font-family="Inter Variable, Inter, sans-serif" font-size="30" font-weight="500" fill="#FAFAF5">October 1, 2026 · Faridpur</text>
+</svg>

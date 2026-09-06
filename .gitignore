@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# guarded project docs — never commit or push
+REQUIREMENT.md
+DESIGN.md
+AGENT.md
+CLAUDE.md
+
+# logs / OS
+*.log
+.DS_Store
+
+# tooling artifacts
+.zcode/
+tsconfig.tsbuildinfo

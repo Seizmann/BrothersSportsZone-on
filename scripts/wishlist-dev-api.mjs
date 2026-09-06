@@ -45,7 +45,18 @@ export function wishlistDevApi(env) {
           body = null;
         }
 
-        const result = await handleWishlistPost(body, env);
+        let result;
+        try {
+          result = await handleWishlistPost(body, env);
+        } catch (error) {
+          // Never let a Redis/network error crash the dev server or the page;
+          // mirror the production function's clean-JSON error contract.
+          console.error("wishlist dev api error", error);
+          result = {
+            status: 500,
+            json: { message: "Something went wrong on our side. Please try again later." },
+          };
+        }
         res.statusCode = result.status;
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify(result.json));

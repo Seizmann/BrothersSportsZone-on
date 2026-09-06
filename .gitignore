@@ -22,3 +22,5 @@ CLAUDE.md
 # tooling artifacts
 .zcode/
 tsconfig.tsbuildinfo
+.vercel
+.env*

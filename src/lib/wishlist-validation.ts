@@ -3,7 +3,7 @@
  * serverless function so the rules can never drift between the two.
  */
 
-import { OPENING_DATE_ISO } from "./target-date";
+import { OPENING_DATE_ISO } from "./target-date.js";
 
 export interface WishlistPayload {
   full_name: string;

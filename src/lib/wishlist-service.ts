@@ -4,7 +4,7 @@
  */
 
 import { Redis } from "@upstash/redis";
-import { validateWishlistInput } from "./wishlist-validation";
+import { validateWishlistInput } from "./wishlist-validation.js";
 
 export interface WishlistEnv {
   url: string;

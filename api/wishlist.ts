@@ -1,5 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { handleWishlistPost } from "../src/lib/wishlist-service";
+// The .js extension is required: Vercel compiles this to ESM under
+// "type": "module", and Node's ESM loader does not resolve extensionless
+// relative imports (local Vite does, which is why dev worked).
+import { handleWishlistPost } from "../src/lib/wishlist-service.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Cache-Control", "no-store");

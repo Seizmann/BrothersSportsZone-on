@@ -8,6 +8,7 @@ import { OPENING_DATE_ISO } from "../lib/target-date";
 import { useWishlistSubmit } from "../hooks/useWishlistSubmit";
 import BottomSheet from "./BottomSheet";
 import { CheckIcon, ClipboardListIcon, SpinnerIcon } from "./icons";
+import WishlistCounter from "./WishlistCounter";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -73,6 +74,11 @@ interface WishlistProps {
   open: boolean;
   onOpen: () => void;
   onClose: () => void;
+  /** Live wishlist count, or null until the first fetch settles. */
+  joinedCount: number | null;
+  /** Called once per server-confirmed submission (fresh entry or the
+   * 24h-already-registered reply) so the shared count can bump +1. */
+  onConfirmed: () => void;
 }
 
 /**
@@ -81,12 +87,18 @@ interface WishlistProps {
  * the success state shows after a fixed ~1s regardless of network speed, and
  * a real failure swaps in an error state with a retry of the same payload.
  */
-export default function Wishlist({ open, onOpen, onClose }: WishlistProps) {
+export default function Wishlist({
+  open,
+  onOpen,
+  onClose,
+  joinedCount,
+  onConfirmed,
+}: WishlistProps) {
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState<WishlistErrors>({});
   const [banner, setBanner] = useState<string | null>(null);
   const { phase, successMessage, errorMessage, serverErrors, submit, retry, reset } =
-    useWishlistSubmit();
+    useWishlistSubmit(onConfirmed);
 
   function setField(key: keyof typeof initialForm, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -161,6 +173,7 @@ export default function Wishlist({ open, onOpen, onClose }: WishlistProps) {
           >
             Join the wishlist
           </button>
+          {joinedCount !== null && <WishlistCounter count={joinedCount} variant="band" />}
           <p className="mt-4 text-caption text-body-mid">
             One entry per phone number every 24 hours. We&rsquo;ll only use your
             number to call about your slot.

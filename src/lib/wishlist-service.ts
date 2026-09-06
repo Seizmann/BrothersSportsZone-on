@@ -1,6 +1,7 @@
 /**
- * Core wishlist submit logic — framework-agnostic so it can be shared by the
- * Vercel function (api/wishlist.ts) and the Vite dev-server middleware.
+ * Core wishlist logic — framework-agnostic so it can be shared by the
+ * Vercel functions (api/wishlist.ts, api/wishlist/count.ts) and the Vite
+ * dev-server middleware.
  */
 
 import { Redis } from "@upstash/redis";
@@ -18,6 +19,22 @@ export interface HandlerResult {
 
 const PHONE_TTL_SECONDS = 24 * 60 * 60;
 
+/** Every accepted entry is appended to this list, so `LLEN` on it is the
+ * O(1) total entry count — no separate counter key or backfill needed. */
+const INDEX_KEY = "wishlist:index";
+
+function redisFromEnv(env: WishlistEnv): Redis | null {
+  if (!env.url || !env.token || !env.url.startsWith("https://")) {
+    console.error(
+      "Upstash Redis is not configured: UPSTASH_REDIS_REST_URL must be the",
+      "https:// REST endpoint (not the redis:// connection string) and",
+      "UPSTASH_REDIS_REST_TOKEN must be the REST token.",
+    );
+    return null;
+  }
+  return new Redis({ url: env.url, token: env.token });
+}
+
 export async function handleWishlistPost(
   body: unknown,
   env: WishlistEnv,
@@ -33,12 +50,8 @@ export async function handleWishlistPost(
     };
   }
 
-  if (!env.url || !env.token || !env.url.startsWith("https://")) {
-    console.error(
-      "Upstash Redis is not configured: UPSTASH_REDIS_REST_URL must be the",
-      "https:// REST endpoint (not the redis:// connection string) and",
-      "UPSTASH_REDIS_REST_TOKEN must be the REST token.",
-    );
+  const redis = redisFromEnv(env);
+  if (!redis) {
     return {
       status: 500,
       json: {
@@ -48,7 +61,6 @@ export async function handleWishlistPost(
     };
   }
 
-  const redis = new Redis({ url: env.url, token: env.token });
   const phoneKey = `wishlist:phone:${result.value.phone_number}`;
 
   try {
@@ -74,11 +86,38 @@ export async function handleWishlistPost(
     };
 
     await redis.set(`wishlist:${entry_id}`, JSON.stringify(entry));
-    await redis.rpush("wishlist:index", entry_id);
+    await redis.rpush(INDEX_KEY, entry_id);
 
     return { status: 200, json: { entry_id } };
   } catch (error) {
     console.error("Failed to store wishlist entry", error);
+    return {
+      status: 500,
+      json: {
+        message: "Something went wrong on our side. Please try again later.",
+      },
+    };
+  }
+}
+
+/** Current total wishlist entry count — a single O(1) `LLEN` on the index
+ * list the submit handler already appends to. */
+export async function handleWishlistCount(env: WishlistEnv): Promise<HandlerResult> {
+  const redis = redisFromEnv(env);
+  if (!redis) {
+    return {
+      status: 500,
+      json: {
+        message: "Something went wrong on our side. Please try again later.",
+      },
+    };
+  }
+
+  try {
+    const count = (await redis.llen(INDEX_KEY)) ?? 0;
+    return { status: 200, json: { count } };
+  } catch (error) {
+    console.error("Failed to read wishlist count", error);
     return {
       status: 500,
       json: {

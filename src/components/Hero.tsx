@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import Countdown from "./Countdown";
 import PitchLines from "./PitchLines";
+import WishlistCounter from "./WishlistCounter";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -14,7 +15,14 @@ const slideFromRight = {
   shown: { opacity: 1, x: 0 },
 };
 
-export default function Hero({ onJoinWishlist }: { onJoinWishlist: () => void }) {
+export default function Hero({
+  onJoinWishlist,
+  joinedCount,
+}: {
+  onJoinWishlist: () => void;
+  /** Live wishlist count, or null until the first fetch settles. */
+  joinedCount: number | null;
+}) {
   return (
     <section className="relative overflow-hidden bg-ink text-canvas on-dark">
       <PitchLines />
@@ -69,6 +77,9 @@ export default function Hero({ onJoinWishlist }: { onJoinWishlist: () => void })
           >
             Join the wishlist
           </button>
+          {joinedCount !== null && (
+            <WishlistCounter count={joinedCount} variant="hero" />
+          )}
           <p className="mt-3 text-caption text-mute">
             Planning a match? Get a call back when we open.
           </p>

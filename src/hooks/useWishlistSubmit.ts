@@ -4,6 +4,10 @@
  * ~1s "feels-instant" delay so the UI never appears to block on latency.
  * A real failure — non-2xx, timeout, network error — always wins: success is
  * never shown, and the error state carries a retry of the same payload.
+ *
+ * onConfirmed is invoked once per accepted submission (duplicate-phone
+ * "already registered" replies included, since those entries are also in the
+ * count) and only when the server returned an entry_id — never on retries.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { WishlistErrors, WishlistPayload } from "../lib/wishlist-validation";
@@ -19,7 +23,7 @@ interface FetchResult {
   data: { entry_id?: string; message?: string; errors?: WishlistErrors };
 }
 
-export function useWishlistSubmit() {
+export function useWishlistSubmit(onConfirmed?: () => void) {
   const [phase, setPhase] = useState<SubmitPhase>("idle");
   const [successMessage, setSuccessMessage] = useState(
     "We'll call you closer to opening day!",
@@ -30,6 +34,8 @@ export function useWishlistSubmit() {
   const lastPayload = useRef<WishlistPayload | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const alive = useRef(true);
+  const onConfirmedRef = useRef(onConfirmed);
+  onConfirmedRef.current = onConfirmed;
 
   useEffect(() => {
     alive.current = true;
@@ -43,6 +49,7 @@ export function useWishlistSubmit() {
     if (!result || !elapsed || !alive.current) return;
 
     if (result.ok) {
+      if (result.data.entry_id) onConfirmedRef.current?.();
       if (result.data.message) setSuccessMessage(result.data.message);
       setPhase("success");
       return;

@@ -1,10 +1,20 @@
 /**
- * Vite dev middleware — serves POST /api/wishlist during `npm run dev` so the
- * form works without `vercel dev`. Production uses api/wishlist.ts instead.
- * Reads credentials from .env.local (UPSTASH_REDIS_REST_URL / _TOKEN).
+ * Vite dev middleware — serves GET /api/wishlist/count and POST
+ * /api/wishlist during `npm run dev` so the form and counter work without
+ * `vercel dev`. Production uses api/wishlist.ts and api/wishlist/count.ts
+ * instead. Reads credentials from .env.local (UPSTASH_REDIS_REST_URL /
+ * _TOKEN) via vite.config.ts (loadEnv), keeping them server-side only.
+ *
+ * @param {{ url: string, token: string }} env Upstash REST credentials.
  */
 
-import { handleWishlistPost } from "../src/lib/wishlist-service";
+import { handleWishlistPost, handleWishlistCount } from "../src/lib/wishlist-service";
+
+function sendJson(res, status, json) {
+  res.statusCode = status;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(json));
+}
 
 /**
  * Vite dev middleware — serves POST /api/wishlist during `npm run dev` so the
@@ -19,6 +29,25 @@ export function wishlistDevApi(env) {
     name: "wishlist-dev-api",
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
+        // Count endpoint: GET /api/wishlist/count.
+        if (req.url === "/api/wishlist/count") {
+          if (req.method !== "GET") {
+            res.setHeader("Allow", "GET");
+            sendJson(res, 405, { message: "Method not allowed." });
+            return;
+          }
+          try {
+            const result = await handleWishlistCount(env);
+            sendJson(res, result.status, result.json);
+          } catch (error) {
+            console.error("wishlist count dev api error", error);
+            sendJson(res, 500, {
+              message: "Something went wrong on our side. Please try again later.",
+            });
+          }
+          return;
+        }
+
         if (req.url !== "/api/wishlist") {
           next();
           return;

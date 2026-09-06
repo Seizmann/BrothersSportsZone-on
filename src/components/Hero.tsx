@@ -54,6 +54,24 @@ export default function Hero() {
         >
           <Countdown />
         </motion.div>
+
+        <motion.div
+          variants={rise}
+          initial="hidden"
+          animate="shown"
+          transition={{ duration: 0.6, delay: 0.48, ease: EASE }}
+          className="mt-10"
+        >
+          <a
+            href="#wishlist"
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-body-md font-semibold text-on-primary transition-colors hover:bg-primary-dark"
+          >
+            Join the wishlist
+          </a>
+          <p className="mt-3 text-caption text-mute">
+            Planning a match? Get a call back when we open.
+          </p>
+        </motion.div>
       </div>
     </section>
   );

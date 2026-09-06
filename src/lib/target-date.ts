@@ -4,6 +4,9 @@
  */
 export const OPENING_EPOCH_MS = Date.UTC(2026, 8, 30, 18, 0, 0);
 
+/** First bookable date in the wishlist picker: opening day itself, in Faridpur (UTC+6). */
+export const OPENING_DATE_ISO = "2026-10-01";
+
 export interface TimeRemaining {
   days: number;
   hours: number;

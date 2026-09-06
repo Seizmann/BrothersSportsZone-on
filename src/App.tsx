@@ -2,6 +2,7 @@ import { MotionConfig } from "motion/react";
 import Nav from "./components/Nav";
 import Hero from "./components/Hero";
 import HighlightsStrip from "./components/HighlightsStrip";
+import Wishlist from "./components/Wishlist";
 import Footer from "./components/Footer";
 
 export default function App() {
@@ -11,6 +12,7 @@ export default function App() {
       <main>
         <Hero />
         <HighlightsStrip />
+        <Wishlist />
       </main>
       <Footer />
     </MotionConfig>

@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "typecheck:api": "tsc -p tsconfig.api.json --noEmit",
     "preview": "vite preview",
     "generate-assets": "node scripts/generate-assets.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.5",
+    "@upstash/redis": "^1.38.4",
     "motion": "^12.15.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -18,8 +20,10 @@
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/vite": "^4.1.7",
+    "@types/node": "^26.4.1",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.6",
+    "@vercel/node": "^12.0.1",
     "@vitejs/plugin-react": "^4.4.1",
     "tailwindcss": "^4.1.7",
     "typescript": "^5.8.3",

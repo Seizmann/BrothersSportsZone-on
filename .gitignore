@@ -1,6 +1,11 @@
 # dependencies
 node_modules/
 
+# env — server-side secrets only (Upstash Redis credentials)
+.env
+.env.local
+.env.*.local
+
 # build output
 dist/
 

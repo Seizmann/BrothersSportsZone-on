@@ -1,20 +1,18 @@
 import { useState, type FormEvent, type ReactNode } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import {
   validateWishlistInput,
   type WishlistErrors,
 } from "../lib/wishlist-validation";
 import { OPENING_DATE_ISO } from "../lib/target-date";
+import { useWishlistSubmit } from "../hooks/useWishlistSubmit";
+import BottomSheet from "./BottomSheet";
 import { CheckIcon, ClipboardListIcon, SpinnerIcon } from "./icons";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 const PREFERENCE_NOTE =
   "This is just your preference. We'll call you to confirm the actual schedule once we're open.";
-
-const SUCCESS_MESSAGE = "We'll call you closer to opening day!";
-
-type Status = "idle" | "submitting" | "success";
 
 const initialForm = {
   full_name: "",
@@ -71,12 +69,24 @@ function Field({ id, label, error, hint, children }: FieldProps) {
   );
 }
 
-export default function Wishlist() {
+interface WishlistProps {
+  open: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+}
+
+/**
+ * Wishlist (polish pass §3–4): the landing page keeps only a CTA band; the
+ * form lives in a bottom sheet. Submission is optimistic (useWishlistSubmit):
+ * the success state shows after a fixed ~1s regardless of network speed, and
+ * a real failure swaps in an error state with a retry of the same payload.
+ */
+export default function Wishlist({ open, onOpen, onClose }: WishlistProps) {
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState<WishlistErrors>({});
   const [banner, setBanner] = useState<string | null>(null);
-  const [status, setStatus] = useState<Status>("idle");
-  const [successMessage, setSuccessMessage] = useState(SUCCESS_MESSAGE);
+  const { phase, successMessage, errorMessage, serverErrors, submit, retry, reset } =
+    useWishlistSubmit();
 
   function setField(key: keyof typeof initialForm, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -88,59 +98,34 @@ export default function Wishlist() {
     });
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function closeSheet() {
+    onClose();
+    // Reset to a clean form once the exit animation is out of view.
+    setTimeout(() => {
+      setForm(initialForm);
+      setErrors({});
+      setBanner(null);
+      reset();
+    }, 300);
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (status === "submitting") return;
+    if (phase === "pending") return;
 
     setBanner(null);
 
     const parsed = validateWishlistInput(form);
-
     if (!parsed.ok) {
       setErrors(parsed.errors);
       return;
     }
-
-    setStatus("submitting");
-    try {
-      const response = await fetch("/api/wishlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed.value),
-      });
-      const data: { entry_id?: string; message?: string; errors?: WishlistErrors } =
-        await response.json().catch(() => ({}));
-
-      if (response.ok) {
-        if (data.message) {
-          // Duplicate registration — friendly notice, not an error.
-          setSuccessMessage(data.message);
-        }
-        setStatus("success");
-        return;
-      }
-
-      if (response.status === 400 && data.errors) {
-        setErrors(data.errors);
-        setBanner(data.message ?? "Please check the highlighted fields and try again.");
-        return;
-      }
-
-      setBanner(data.message ?? "Something went wrong. Please try again.");
-    } catch {
-      setBanner("Couldn't reach the server. Check your connection and try again.");
-    } finally {
-      setStatus((prev) => (prev === "success" ? prev : "idle"));
-    }
+    // Fire the request now; the hook decides when the UI settles.
+    submit(parsed.value);
   }
 
-  function resetForm() {
-    setForm(initialForm);
-    setErrors({});
-    setBanner(null);
-    setSuccessMessage(SUCCESS_MESSAGE);
-    setStatus("idle");
-  }
+  // Server-side 400 field errors surface on the fields after the request.
+  const fieldErrors: WishlistErrors = { ...errors, ...serverErrors };
 
   const today = new Date().toISOString().slice(0, 10);
   // Only dates on/after opening day (Oct 1, 2026) can be picked.
@@ -154,44 +139,90 @@ export default function Wishlist() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-64px" }}
           transition={{ duration: 0.5, ease: EASE }}
-          className="rounded-md bg-canvas px-6 py-10 sm:px-10 sm:py-12"
+          className="rounded-md bg-canvas px-6 py-10 text-center sm:px-10 sm:py-12"
         >
-          {status === "success" ? (
-            <div className="mx-auto max-w-md text-center" role="status">
-              <span className="inline-flex size-14 items-center justify-center rounded-full bg-primary text-on-primary">
-                <CheckIcon className="size-7" />
-              </span>
-              <h2 id="wishlist-heading" className="mt-6 text-display-md text-ink">
-                You&rsquo;re on the wishlist!
-              </h2>
-              <p className="mt-3 text-body-lg text-body-mid">{successMessage}</p>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="mt-8 rounded-md border border-mute/60 px-5 py-2.5 text-body-md font-medium text-ink-soft transition-colors hover:border-ink-soft"
-              >
-                Register another team
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="mx-auto max-w-xl text-center">
-                <span className="inline-flex size-12 items-center justify-center rounded-full bg-canvas-soft text-primary">
-                  <ClipboardListIcon className="size-6" />
-                </span>
-                <h2 id="wishlist-heading" className="mt-4 text-display-md text-ink">
-                  Join the wishlist
-                </h2>
-                <p className="mt-3 text-body-lg text-body-mid">
-                  Planning a match once the turf opens? Leave your details and
-                  we&rsquo;ll call you back to lock in your slot. No payment, no
-                  commitment — just early interest.
-                </p>
-              </div>
+          <span className="inline-flex size-12 items-center justify-center rounded-full bg-canvas-soft text-primary">
+            <ClipboardListIcon className="size-6" />
+          </span>
+          <h2 id="wishlist-heading" className="mt-4 text-display-md text-ink">
+            Join the wishlist
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-body-lg text-body-mid">
+            Planning a match once the turf opens? Leave your details and we&rsquo;ll
+            call you back to lock in your slot. No payment, no commitment — just
+            early interest.
+          </p>
+          <button
+            type="button"
+            onClick={onOpen}
+            className="mt-8 inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-body-md font-semibold text-on-primary transition-colors hover:bg-primary-dark"
+          >
+            Join the wishlist
+          </button>
+          <p className="mt-4 text-caption text-body-mid">
+            One entry per phone number every 24 hours. We&rsquo;ll only use your
+            number to call about your slot.
+          </p>
+        </motion.div>
+      </div>
 
-              <form onSubmit={handleSubmit} noValidate className="mx-auto mt-10 max-w-2xl">
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                  <Field id="wishlist-name" label="Your name" error={errors.full_name}>
+      <AnimatePresence>
+        {open && (
+          <BottomSheet open={open} onClose={closeSheet} labelledBy="wishlist-sheet-heading">
+            {phase === "success" ? (
+              <div className="mx-auto max-w-md py-6 text-center" role="status">
+                <span className="inline-flex size-14 items-center justify-center rounded-full bg-primary text-on-primary">
+                  <CheckIcon className="size-7" />
+                </span>
+                <h3 className="mt-6 text-display-md text-ink">You&rsquo;re on the wishlist!</h3>
+                <p className="mt-3 text-body-lg text-body-mid">{successMessage}</p>
+                <button
+                  type="button"
+                  onClick={closeSheet}
+                  className="mt-8 rounded-md border border-mute/60 px-5 py-2.5 text-body-md font-medium text-ink-soft transition-colors hover:border-ink-soft"
+                >
+                  Done
+                </button>
+              </div>
+            ) : phase === "error" ? (
+              <div className="mx-auto max-w-md py-6 text-center" role="alert">
+                <span className="inline-flex size-14 items-center justify-center rounded-full border border-primary-dark/30 text-primary-dark">
+                  <ClipboardListIcon className="size-7" />
+                </span>
+                <h3 className="mt-6 text-display-md text-ink">We couldn&rsquo;t add you</h3>
+                <p className="mt-3 text-body-lg text-body-mid">
+                  {errorMessage}
+                </p>
+                <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={retry}
+                    className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-body-md font-semibold text-on-primary transition-colors hover:bg-primary-dark"
+                  >
+                    Try again
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeSheet}
+                    className="rounded-md border border-mute/60 px-5 py-2.5 text-body-md font-medium text-ink-soft transition-colors hover:border-ink-soft"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} noValidate>
+                <div className="mx-auto max-w-xl text-center">
+                  <h3 id="wishlist-sheet-heading" className="text-display-md text-ink">
+                    Join the wishlist
+                  </h3>
+                  <p className="mt-2 text-body-md text-body-mid">
+                    We&rsquo;ll call you back to lock in your slot.
+                  </p>
+                </div>
+
+                <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <Field id="wishlist-name" label="Your name" error={fieldErrors.full_name}>
                     {(aria) => (
                       <input
                         {...aria}
@@ -205,7 +236,7 @@ export default function Wishlist() {
                     )}
                   </Field>
 
-                  <Field id="wishlist-phone" label="Phone number" error={errors.phone_number}>
+                  <Field id="wishlist-phone" label="Phone number" error={fieldErrors.phone_number}>
                     {(aria) => (
                       <input
                         {...aria}
@@ -220,7 +251,7 @@ export default function Wishlist() {
                     )}
                   </Field>
 
-                  <Field id="wishlist-team-a" label="Team name (yours)" error={errors.team_name_a}>
+                  <Field id="wishlist-team-a" label="Team name (yours)" error={fieldErrors.team_name_a}>
                     {(aria) => (
                       <input
                         {...aria}
@@ -236,7 +267,7 @@ export default function Wishlist() {
                   <Field
                     id="wishlist-team-b"
                     label="Opponent team (optional)"
-                    error={errors.team_name_b}
+                    error={fieldErrors.team_name_b}
                   >
                     {(aria) => (
                       <input
@@ -255,7 +286,7 @@ export default function Wishlist() {
                   <Field
                     id="wishlist-players"
                     label="Total players"
-                    error={errors.number_of_players}
+                    error={fieldErrors.number_of_players}
                   >
                     {(aria) => (
                       <input
@@ -275,7 +306,7 @@ export default function Wishlist() {
                   <Field
                     id="wishlist-date"
                     label="Preferred date (not final)"
-                    error={errors.preferred_date}
+                    error={fieldErrors.preferred_date}
                     hint={PREFERENCE_NOTE}
                   >
                     {(aria) => (
@@ -293,7 +324,7 @@ export default function Wishlist() {
                   <Field
                     id="wishlist-time"
                     label="Preferred time (not final)"
-                    error={errors.preferred_time}
+                    error={fieldErrors.preferred_time}
                     hint={PREFERENCE_NOTE}
                   >
                     {(aria) => (
@@ -319,10 +350,10 @@ export default function Wishlist() {
 
                 <button
                   type="submit"
-                  disabled={status === "submitting"}
+                  disabled={phase === "pending"}
                   className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-body-md font-semibold text-on-primary transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
                 >
-                  {status === "submitting" ? (
+                  {phase === "pending" ? (
                     <>
                       <SpinnerIcon className="size-5" />
                       Submitting…
@@ -337,10 +368,10 @@ export default function Wishlist() {
                   your number to call about your slot.
                 </p>
               </form>
-            </>
-          )}
-        </motion.div>
-      </div>
+            )}
+          </BottomSheet>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

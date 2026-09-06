@@ -26,6 +26,10 @@
   --radius-sm: 6px;
   --radius-md: 12px;
 
+  /* Soft surface shadow — polish-pass exception to §4.4's flat elevation,
+   * allowed for the countdown-box redesign. Barely-there lift, green-tinted. */
+  --shadow-surface: 0 2px 10px -2px rgb(20 32 26 / 0.08), 0 1px 3px rgb(20 32 26 / 0.05);
+
   /* Type scale (§4.2) */
   --text-display-xl: clamp(2.25rem, 5.5vw + 1rem, 3.5rem);
   --text-display-xl--line-height: 1.04;
@@ -66,6 +70,11 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    /* Entrance animations start translated (e.g. slide-from-right x:48);
+     * clip the horizontal overflow so pre-animation offsets never create a
+     * horizontal scrollbar at narrow widths. `clip` (not `hidden`) doesn't
+     * turn the element into a scroll container. */
+    overflow-x: clip;
   }
 
   body {
@@ -108,13 +117,25 @@
   }
 }
 
-@keyframes digit-roll {
+/* Seconds-tick animations — slot-based, always-mounted, no mount/unmount gap.
+ * slot-in: new content rolls in from below (used when digit→icon and icon→digit).
+ * slot-out is never needed: the slot's content is swapped directly, so the
+ * old content simply stops being rendered. The slot wrapper has overflow:hidden
+ * so any translate outside [0,100%] is clipped. */
+@media (prefers-reduced-motion: no-preference) {
+  .slot-roll {
+    animation: slot-roll 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@keyframes slot-roll {
   from {
-    transform: translateY(55%);
-    opacity: 0.4;
+    transform: translateY(60%) rotate(-15deg);
+    opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateY(0) rotate(0deg);
     opacity: 1;
   }
 }
+

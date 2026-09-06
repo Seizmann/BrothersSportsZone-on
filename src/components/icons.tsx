@@ -29,6 +29,21 @@ export function BallIcon(props: IconProps) {
   );
 }
 
+/* Football with pentagon + spokes, for the seconds tick overlay. */
+export function FootballIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 7.5 16.3 10.6 14.6 15.6H9.4L7.7 10.6z" />
+      <path d="M12 7.5V2" />
+      <path d="m16.3 10.6 5.2-1.7" />
+      <path d="m14.6 15.6 3.3 4.5" />
+      <path d="m9.4 15.6-3.3 4.5" />
+      <path d="M7.7 10.6 2.5 8.9" />
+    </svg>
+  );
+}
+
 export function GoalpostIcon(props: IconProps) {
   return (
     <svg {...base(props)}>
@@ -94,6 +109,15 @@ export function CheckIcon(props: IconProps) {
   return (
     <svg {...base(props)}>
       <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+export function XIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
     </svg>
   );
 }
